@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Manage Uploads — DataFlow{% endblock %}
+{% block content %}
+<div class="page-title">Manage Uploads</div>
+<div class="page-subtitle">
+  {% if current_user.is_admin() %}All uploaded datasets.{% else %}Your uploads and shared datasets.{% endif %}
+</div>
+
+<div style="margin-bottom:20px; display:flex; gap:12px;">
+  <a href="{{ url_for('main.upload') }}" class="btn btn-primary">+ Upload new CSV</a>
+</div>
+
+{% if uploads %}
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>File</th>
+        {% if current_user.is_admin() %}<th>Owner</th>{% endif %}
+        <th>Rows</th>
+        <th>Columns</th>
+        <th>Shared</th>
+        <th>Uploaded</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for u in uploads %}
+    <tr>
+      <td>
+        <a href="{{ url_for('main.preview_upload', upload_id=u.id) }}" style="color:var(--accent); text-decoration:none;">
+          {{ u.original_filename }}
+        </a>
+      </td>
+      {% if current_user.is_admin() %}
+      <td>{{ u.owner.username }}</td>
+      {% endif %}
+      <td>{{ u.row_count }}</td>
+      <td style="color:var(--muted); font-size:12px;">
+        {% set cols = u.columns | from_json %}
+        {{ cols | length }} cols
+        <span style="display:block; color:var(--muted); font-size:11px; margin-top:2px;">
+          {{ cols[:3] | join(', ') }}{% if cols | length > 3 %}…{% endif %}
+        </span>
+      </td>
+      <td>
+        {% if u.is_shared %}
+          <span class="tag tag-shared">shared</span>
+        {% else %}
+          <span style="color:var(--muted); font-size:12px;">private</span>
+        {% endif %}
+      </td>
+      <td style="color:var(--muted); font-size:12px;">{{ u.uploaded_at.strftime('%d %b %Y %H:%M') }}</td>
+      <td style="display:flex; gap:6px; flex-wrap:wrap;">
+        <a href="{{ url_for('main.preview_upload', upload_id=u.id) }}" class="btn btn-ghost btn-sm">Preview</a>
+        <a href="{{ url_for('main.choices', upload_id=u.id) }}" class="btn btn-ghost btn-sm">Process</a>
+        {% if u.user_id == current_user.id or current_user.is_admin() %}
+        <form method="POST" action="{{ url_for('main.delete_upload', upload_id=u.id) }}"
+              onsubmit="return confirm('Delete {{ u.original_filename }}?')">
+          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="empty">No uploads yet. <a href="{{ url_for('main.upload') }}" style="color:var(--accent)">Upload a CSV →</a></div>
+</div>
+{% endif %}
+{% endblock %}

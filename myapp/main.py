@@ -64,6 +64,52 @@ def upload():
     return render_template('upload.html')
 
 
+@main_bp.route('/uploads')
+@login_required
+def manage_uploads():
+    if current_user.is_admin():
+        all_uploads = Upload.query.order_by(Upload.uploaded_at.desc()).all()
+    else:
+        all_uploads = Upload.query.filter(
+            (Upload.user_id == current_user.id) | (Upload.is_shared == True)
+        ).order_by(Upload.uploaded_at.desc()).all()
+    return render_template('manage_uploads.html', uploads=all_uploads)
+
+
+@main_bp.route('/uploads/<int:upload_id>/preview')
+@login_required
+def preview_upload(upload_id):
+    upload_rec = _get_accessible_upload(upload_id)
+    if not upload_rec:
+        flash('Upload not found or access denied.', 'error')
+        return redirect(url_for('main.manage_uploads'))
+    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], upload_rec.filename)
+    try:
+        df = pd.read_csv(filepath, encoding='utf-8', encoding_errors='replace')
+        columns = list(df.columns)
+        rows = df.head(50).fillna('').to_dict(orient='records')
+        total_rows = len(df)
+        dtypes = {col: str(df[col].dtype) for col in columns}
+        stats = {}
+        for col in df.select_dtypes(include='number').columns:
+            stats[col] = {
+                'min': round(df[col].min(), 2),
+                'max': round(df[col].max(), 2),
+                'mean': round(df[col].mean(), 2),
+                'nulls': int(df[col].isnull().sum()),
+            }
+    except Exception as e:
+        flash(f'Could not read file: {e}', 'error')
+        return redirect(url_for('main.manage_uploads'))
+    return render_template('preview_upload.html',
+                           upload=upload_rec,
+                           columns=columns,
+                           rows=rows,
+                           total_rows=total_rows,
+                           dtypes=dtypes,
+                           stats=stats)
+
+
 @main_bp.route('/choices/<int:upload_id>', methods=['GET', 'POST'])
 @login_required
 def choices(upload_id):
@@ -121,14 +167,14 @@ def delete_upload(upload_id):
     upload_rec = Upload.query.get_or_404(upload_id)
     if upload_rec.user_id != current_user.id and not current_user.is_admin():
         flash('Access denied.', 'error')
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.manage_uploads'))
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], upload_rec.filename)
     if os.path.exists(filepath):
         os.remove(filepath)
     db.session.delete(upload_rec)
     db.session.commit()
     flash('Upload deleted.', 'success')
-    return redirect(url_for('main.dashboard'))
+    return redirect(url_for('main.manage_uploads'))
 
 
 def _get_accessible_upload(upload_id):

@@ -205,6 +205,7 @@
   <div class="nav-links">
     <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
     <a href="{{ url_for('main.upload') }}">Upload CSV</a>
+    <a href="{{ url_for('main.manage_uploads') }}">My Uploads</a>
     {% if current_user.is_admin() %}
     <a href="{{ url_for('admin.index') }}">Admin</a>
     {% endif %}

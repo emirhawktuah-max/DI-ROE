@@ -23,6 +23,9 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(main_bp)
 
+    import json as _json
+    app.jinja_env.filters['from_json'] = _json.loads
+
     with app.app_context():
         db.create_all()
         seed_admin()

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Preview — {{ upload.original_filename }}{% endblock %}
+{% block content %}
+
+<div class="page-title">{{ upload.original_filename }}</div>
+<div class="page-subtitle">
+  {{ total_rows }} rows &middot; {{ columns | length }} columns &middot;
+  uploaded {{ upload.uploaded_at.strftime('%d %b %Y %H:%M') }}
+  {% if upload.is_shared %}&middot; <span class="tag tag-shared">shared</span>{% endif %}
+</div>
+
+<div style="display:flex; gap:12px; margin-bottom:24px;">
+  <a href="{{ url_for('main.choices', upload_id=upload.id) }}" class="btn btn-primary">Run processing →</a>
+  <a href="{{ url_for('main.manage_uploads') }}" class="btn btn-ghost">← All uploads</a>
+  {% if upload.user_id == current_user.id or current_user.is_admin() %}
+  <form method="POST" action="{{ url_for('main.delete_upload', upload_id=upload.id) }}"
+        onsubmit="return confirm('Delete this file?')" style="margin:0;">
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Column overview -->
+<div class="card">
+  <div class="card-title">Columns ({{ columns | length }})</div>
+  <div style="display:flex; flex-wrap:wrap; gap:8px;">
+    {% for col in columns %}
+    <span style="
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:4px;
+      padding:4px 10px;
+      font-size:12px;">
+      {{ col }}
+      <span style="color:var(--muted); margin-left:4px;">{{ dtypes[col] }}</span>
+    </span>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Numeric stats -->
+{% if stats %}
+<div class="card">
+  <div class="card-title">Numeric Statistics</div>
+  <table>
+    <thead>
+      <tr><th>Column</th><th>Min</th><th>Max</th><th>Mean</th><th>Nulls</th></tr>
+    </thead>
+    <tbody>
+    {% for col, s in stats.items() %}
+    <tr>
+      <td>{{ col }}</td>
+      <td>{{ s.min }}</td>
+      <td>{{ s.max }}</td>
+      <td>{{ s.mean }}</td>
+      <td>{% if s.nulls > 0 %}<span style="color:var(--danger);">{{ s.nulls }}</span>{% else %}0{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Data preview -->
+<div class="card">
+  <div class="card-title">
+    Data Preview
+    {% if total_rows > 50 %}
+    <span style="color:var(--muted); font-weight:normal; font-size:11px; margin-left:8px;">
+      showing first 50 of {{ total_rows }} rows
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- Search / filter -->
+  <div style="margin-bottom:16px;">
+    <input type="text" id="search-input" placeholder="Filter rows…"
+           oninput="filterRows(this.value)"
+           style="max-width:320px;"/>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table id="preview-table">
+      <thead>
+        <tr>
+          <th style="color:var(--muted); width:40px;">#</th>
+          {% for col in columns %}
+          <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+      <tr>
+        <td style="color:var(--muted); font-size:11px;">{{ loop.index }}</td>
+        {% for col in columns %}
+        <td>{{ row[col] }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="filter-count" style="margin-top:12px; font-size:12px; color:var(--muted);"></div>
+</div>
+
+<script>
+function filterRows(query) {
+  const rows = document.querySelectorAll('#preview-table tbody tr');
+  const q = query.toLowerCase();
+  let visible = 0;
+  rows.forEach(row => {
+    const match = row.textContent.toLowerCase().includes(q);
+    row.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  const counter = document.getElementById('filter-count');
+  counter.textContent = q ? `${visible} of ${rows.length} rows match` : '';
+}
+</script>
+{% endblock %}
