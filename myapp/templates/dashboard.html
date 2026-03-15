@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — DataFlow{% endblock %}
+{% block content %}
+<div class="page-title">Dashboard</div>
+<div class="page-subtitle">Welcome back, {{ current_user.username }}.</div>
+
+<div class="grid-3" style="margin-bottom:32px;">
+  <div class="card">
+    <div class="stat">
+      <span class="stat-val">{{ my_uploads|length }}</span>
+      <span class="stat-label">My uploads</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stat">
+      <span class="stat-val">{{ shared_uploads|length }}</span>
+      <span class="stat-label">Shared datasets</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stat">
+      <span class="stat-val">{{ my_results|length }}</span>
+      <span class="stat-label">Recent results</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- My uploads -->
+  <div class="card">
+    <div class="card-title">My Uploads</div>
+    {% if my_uploads %}
+    <table>
+      <thead><tr><th>File</th><th>Rows</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+      {% for u in my_uploads %}
+      <tr>
+        <td>{{ u.original_filename }}</td>
+        <td>{{ u.row_count }}</td>
+        <td>{{ u.uploaded_at.strftime('%d %b') }}</td>
+        <td>
+          <a href="{{ url_for('main.choices', upload_id=u.id) }}" class="btn btn-ghost btn-sm">Process</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No uploads yet. <a href="{{ url_for('main.upload') }}" style="color:var(--accent)">Upload a CSV →</a></div>
+    {% endif %}
+  </div>
+
+  <!-- Shared datasets -->
+  <div class="card">
+    <div class="card-title">Shared Datasets</div>
+    {% if shared_uploads %}
+    <table>
+      <thead><tr><th>File</th><th>Owner</th><th>Rows</th><th></th></tr></thead>
+      <tbody>
+      {% for u in shared_uploads %}
+      <tr>
+        <td>{{ u.original_filename }}</td>
+        <td>{{ u.owner.username }}</td>
+        <td>{{ u.row_count }}</td>
+        <td>
+          <a href="{{ url_for('main.choices', upload_id=u.id) }}" class="btn btn-ghost btn-sm">Process</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No shared datasets yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent results -->
+{% if my_results %}
+<div class="card" style="margin-top:8px;">
+  <div class="card-title">Recent Results</div>
+  <table>
+    <thead><tr><th>Result</th><th>File</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    {% for r in my_results %}
+    <tr>
+      <td>#{{ r.id }}</td>
+      <td>{{ r.upload.original_filename }}</td>
+      <td>{{ r.created_at.strftime('%d %b %H:%M') }}</td>
+      <td><a href="{{ url_for('main.results', result_id=r.id) }}" class="btn btn-ghost btn-sm">View →</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div style="margin-top:24px;">
+  <a href="{{ url_for('main.upload') }}" class="btn btn-primary">+ Upload new CSV</a>
+</div>
+{% endblock %}

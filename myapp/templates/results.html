@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Results #{{ result.id }} — DataFlow{% endblock %}
+{% block content %}
+<div class="page-title">Results <span style="color:var(--muted); font-size:20px;">#{{ result.id }}</span></div>
+<div class="page-subtitle">
+  {{ result.upload.original_filename }} &middot; {{ result.created_at.strftime('%d %b %Y %H:%M') }}
+</div>
+
+<!-- Summary -->
+<div class="card">
+  <div class="card-title">Summary</div>
+  <p style="line-height:1.7; color:var(--text);">{{ output.summary }}</p>
+</div>
+
+<!-- Choices used -->
+<div class="card">
+  <div class="card-title">Choices used</div>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+    {% for k, v in choices.items() %}
+    <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Stats -->
+{% if output.stats %}
+<div class="card">
+  <div class="card-title">Numeric Statistics</div>
+  <table>
+    <thead><tr><th>Column</th><th>Min</th><th>Max</th><th>Mean</th></tr></thead>
+    <tbody>
+    {% for col, s in output.stats.items() %}
+    <tr>
+      <td>{{ col }}</td>
+      <td>{{ s.min }}</td>
+      <td>{{ s.max }}</td>
+      <td>{{ s.mean }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Data preview table -->
+{% if output.table %}
+<div class="card">
+  <div class="card-title">Data Preview (first 20 rows)</div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          {% for col in output.columns %}
+          <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in output.table %}
+        <tr>
+          {% for col in output.columns %}
+          <td>{{ row[col] }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div style="display:flex; gap:12px; margin-top:8px;">
+  <a href="{{ url_for('main.choices', upload_id=result.upload_id) }}" class="btn btn-ghost">← Run again</a>
+  <a href="{{ url_for('main.dashboard') }}" class="btn btn-ghost">Dashboard</a>
+</div>
+{% endblock %}
