@@ -38,7 +38,7 @@ def upload():
         file.save(filepath)
 
         try:
-            df = pd.read_csv(filepath)
+            df = pd.read_csv(filepath, encoding='utf-8', encoding_errors='replace')
             row_count = len(df)
             columns = json.dumps(list(df.columns))
         except Exception as e:
@@ -73,7 +73,7 @@ def choices(upload_id):
         return redirect(url_for('main.dashboard'))
 
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], upload_rec.filename)
-    df = pd.read_csv(filepath)
+    df = pd.read_csv(filepath, encoding='utf-8', encoding_errors='replace')
     choice_defs = get_choice_options(df)
 
     if request.method == 'POST':
